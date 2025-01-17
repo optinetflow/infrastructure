@@ -3,12 +3,12 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-# Function to print informational messages
+# Function to print informational messages in green
 echo_info() {
     echo -e "\e[32m[INFO] $1\e[0m"
 }
 
-# Function to print error messages
+# Function to print error messages in red
 echo_error() {
     echo -e "\e[31m[ERROR] $1\e[0m" >&2
 }
@@ -22,7 +22,7 @@ fi
 # Change to /root directory
 cd /root
 
-# 1. Run Hashemi Linux Optimizer script twice with options 2 and 5
+# 1. Run Hashemi Linux Optimizer script with options 2, n, 5, y
 run_linux_optimizer() {
     echo_info "Downloading Linux Optimizer script..."
     wget "https://raw.githubusercontent.com/hawshemi/Linux-Optimizer/main/linux-optimizer.sh" -O /root/linux-optimizer.sh
@@ -33,12 +33,8 @@ run_linux_optimizer() {
 2
 n
 5
+y
 EOF
-    # Get the process ID of the script
-    PID=$!
-    sleep 3  # Wait for the script to start option 5
-    echo "Terminating the script..."
-    kill -9 $PID  # Force terminate the script
 }
 
 # 2. Block England IP ranges
@@ -206,7 +202,17 @@ restart_backhaul_service() {
 
 # Main Execution Flow
 main() {
-    run_linux_optimizer
+    # Prompt the user to decide whether to run Linux Optimizer
+    read -p "Run Linux Optimizer? [y/N]: " RUN_OPTIMIZER
+    case "$RUN_OPTIMIZER" in
+        [yY][eE][sS]|[yY]) 
+            run_linux_optimizer
+            ;;
+        *)
+            echo_info "Skipping Linux Optimizer."
+            ;;
+    esac
+
     block_england_ips
     install_xui
     setup_backhaul
