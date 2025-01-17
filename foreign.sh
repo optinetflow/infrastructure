@@ -25,17 +25,17 @@ cd /root
 # 1. Run Hashemi Linux Optimizer script twice with options 2 and 5
 run_linux_optimizer() {
     echo_info "Downloading Linux Optimizer script..."
-    wget "https://raw.githubusercontent.com/hawshemi/Linux-Optimizer/main/linux-optimizer.sh" -O linux-optimizer.sh
-    chmod +x linux-optimizer.sh
+    wget "https://raw.githubusercontent.com/hawshemi/Linux-Optimizer/main/linux-optimizer.sh" -O /root/linux-optimizer.sh
+    chmod +x /root/linux-optimizer.sh
 
     echo_info "Running Linux Optimizer with options 2 and 5, and answering 'n' to reboot..."
-    bash linux-optimizer.sh <<EOF
+    bash /root/linux-optimizer.sh <<EOF
 2
-n
 5
 n
 EOF
 }
+
 # 2. Block England IP ranges
 block_england_ips() {
     echo_info "Blocking England IP ranges..."
@@ -146,7 +146,7 @@ retrieve_tunnel_ip() {
 
     # Example method to retrieve tunnel IP from the log file
     # This assumes that Backhaul logs the tunnel IP upon connection
-    # Adjust the grep/awk command based on actual log format
+    # Adjust the grep/awk or jq command based on actual log format
 
     # Check if backhaul.json exists
     if [ ! -f /root/backhaul.json ]; then
