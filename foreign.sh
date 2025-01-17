@@ -94,9 +94,12 @@ setup_backhaul() {
     rm backhaul.tar.gz LICENSE README.md
 
     echo_info "Creating Backhaul configuration..."
+    read -p "Enter the tunnel IP: " TUNNEL_IP
+
+
     cat <<EOF > /root/config.toml
 [client] 
-remote_addr = "placeholder_ip:8080"
+remote_addr = "${TUNNEL_IP}:8080"
 transport = "tcpmux"
 token = "zotgcFwR5Bbof2kQbEasttSaELdfrySTRkcDRcC9YIUVwXvCeYjCv0IaoI8HOpVr"
 connection_pool = 8
@@ -137,51 +140,6 @@ WantedBy=multi-user.target
 EOF
 }
 
-# Function to retrieve Tunnel IP
-retrieve_tunnel_ip() {
-    echo_info "Retrieving Tunnel IP..."
-
-    # Wait for Backhaul service to start and establish the tunnel
-    # Adjust the sleep time as necessary based on your network conditions
-    sleep 15
-
-    # Example method to retrieve tunnel IP from the log file
-    # This assumes that Backhaul logs the tunnel IP upon connection
-    # Adjust the grep/awk or jq command based on actual log format
-
-    # Check if backhaul.json exists
-    if [ ! -f /root/backhaul.json ]; then
-        echo_error "/root/backhaul.json does not exist. Cannot retrieve Tunnel IP."
-        exit 1
-    fi
-
-    # Extract the tunnel IP using jq (assuming JSON format)
-    if command -v jq >/dev/null 2>&1; then
-        TUNNEL_IP=$(jq -r '.tunnel_ip' /root/backhaul.json)
-    else
-        # Install jq if not present
-        echo_info "Installing jq for JSON parsing..."
-        apt install -y jq
-        TUNNEL_IP=$(jq -r '.tunnel_ip' /root/backhaul.json)
-    fi
-
-    # Validate the retrieved IP
-    if [[ -z "$TUNNEL_IP" || "$TUNNEL_IP" == "null" ]]; then
-        echo_error "Failed to retrieve Tunnel IP. Please check the Backhaul logs."
-        exit 1
-    fi
-
-    echo_info "Tunnel IP retrieved: $TUNNEL_IP"
-}
-
-# Function to update config.toml with the retrieved Tunnel IP
-update_config() {
-    echo_info "Updating config.toml with Tunnel IP..."
-
-    # Use sed to replace the placeholder_ip with the actual Tunnel IP
-    sed -i "s/placeholder_ip:8080/${TUNNEL_IP}:8080/" /root/config.toml
-}
-
 # 8. Start Backhaul service
 start_backhaul_service() {
     echo_info "Starting Backhaul service..."
@@ -189,14 +147,6 @@ start_backhaul_service() {
     systemctl daemon-reload
     systemctl enable backhaul.service
     systemctl start backhaul.service
-    systemctl status backhaul.service --no-pager
-}
-
-# 9. Restart Backhaul service to apply updated config
-restart_backhaul_service() {
-    echo_info "Restarting Backhaul service to apply updated config..."
-
-    systemctl restart backhaul.service
     systemctl status backhaul.service --no-pager
 }
 
@@ -218,15 +168,6 @@ main() {
     setup_backhaul
     create_backhaul_service
     start_backhaul_service
-
-    # Retrieve Tunnel IP
-    retrieve_tunnel_ip
-
-    # Update config.toml with the retrieved Tunnel IP
-    update_config
-
-    # Restart Backhaul service to apply the new configuration
-    restart_backhaul_service
 
     echo_info "Setup completed successfully!"
     echo "Please proceed with manual steps 4 and 5."
