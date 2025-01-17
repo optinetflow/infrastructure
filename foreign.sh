@@ -170,7 +170,7 @@ main() {
     start_backhaul_service
 
     echo_info "Setup completed successfully!"
-    echo "Please proceed with manual steps 4 and 5."
+    echo "Please restore the x-ui backup and change DNS in Cloudflare."
 }
 
 # Run the main function
