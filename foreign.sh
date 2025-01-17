@@ -34,6 +34,7 @@ run_linux_optimizer() {
 n
 5
 n
+\003
 EOF
 }
 
