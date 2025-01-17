@@ -96,12 +96,13 @@ setup_backhaul() {
     echo_info "Creating Backhaul configuration..."
     read -p "Enter the tunnel IP: " TUNNEL_IP
 
+    read -p "Enter the Backhaul Token: " BACKHAUL_TOKEN
 
     cat <<EOF > /root/config.toml
 [client] 
 remote_addr = "${TUNNEL_IP}:8080"
 transport = "tcpmux"
-token = "zotgcFwR5Bbof2kQbEasttSaELdfrySTRkcDRcC9YIUVwXvCeYjCv0IaoI8HOpVr"
+token = "${BACKHAUL_TOKEN}"
 connection_pool = 8
 aggressive_pool = false
 keepalive_period = 75

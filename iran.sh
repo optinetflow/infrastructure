@@ -85,11 +85,13 @@ setup_backhaul() {
     IFS=',' read -ra PORT_ARRAY <<< "$PORTS_INPUT"
     PORTS_TOML_ARRAY="[\"${PORT_ARRAY[*]// /\",\"}\"]"
 
+    read -p "Enter the Backhaul Token: " BACKHAUL_TOKEN
+
     cat <<EOF > /root/config.toml
 [server]
 bind_addr = "0.0.0.0:8080"
 transport = "tcpmux"
-token = "zotgcFwR5Bbof2kQbEasttSaELdfrySTRkcDRcC9YIUVwXvCeYjCv0IaoI8HOpVr"
+token = "${BACKHAUL_TOKEN}"
 keepalive_period = 75
 nodelay = true
 heartbeat = 40
