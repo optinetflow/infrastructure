@@ -28,13 +28,14 @@ run_linux_optimizer() {
     wget "https://raw.githubusercontent.com/hawshemi/Linux-Optimizer/main/linux-optimizer.sh" -O linux-optimizer.sh
     chmod +x linux-optimizer.sh
 
-    for option in 2 5; do
-        echo_info "Running Linux Optimizer with option $option..."
-        # Supply the option as input to the script
-        echo "$option" | bash linux-optimizer.sh
-    done
+    echo_info "Running Linux Optimizer with options 2 and 5, and answering 'n' to reboot..."
+    bash linux-optimizer.sh <<EOF
+2
+n
+5
+n
+EOF
 }
-
 # 2. Block England IP ranges
 block_england_ips() {
     echo_info "Blocking England IP ranges..."
