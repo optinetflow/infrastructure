@@ -31,6 +31,7 @@ run_linux_optimizer() {
     echo_info "Running Linux Optimizer with options 2 and 5, and answering 'n' to reboot..."
     bash /root/linux-optimizer.sh <<EOF
 2
+n
 5
 n
 EOF
