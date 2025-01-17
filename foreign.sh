@@ -3,14 +3,24 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-# Function to print messages
+# Function to print informational messages
 echo_info() {
     echo -e "\e[32m[INFO] $1\e[0m"
 }
 
+# Function to print error messages
 echo_error() {
     echo -e "\e[31m[ERROR] $1\e[0m" >&2
 }
+
+# Ensure the script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo_error "Please run as root."
+    exit 1
+fi
+
+# Change to /root directory
+cd /root
 
 # 1. Run Hashemi Linux Optimizer script twice with options 2 and 5
 run_linux_optimizer() {
@@ -20,7 +30,8 @@ run_linux_optimizer() {
 
     for option in 2 5; do
         echo_info "Running Linux Optimizer with option $option..."
-        bash linux-optimizer.sh "$option"
+        # Supply the option as input to the script
+        echo "$option" | bash linux-optimizer.sh
     done
 }
 
@@ -28,21 +39,21 @@ run_linux_optimizer() {
 block_england_ips() {
     echo_info "Blocking England IP ranges..."
 
-    # Example IP ranges for England; you should replace these with actual ranges
+    # Example IP ranges for England; replace these with actual ranges as needed
     ENGLAND_IP_RANGES=(
         "5.0.0.0/8"
-        # Add more IP ranges as needed
+        # Add more IP ranges here
     )
 
     for ip in "${ENGLAND_IP_RANGES[@]}"; do
-        sudo iptables -A OUTPUT -d "$ip" -j DROP
+        iptables -A OUTPUT -d "$ip" -j DROP
     done
 
     echo_info "Updating iptables-persistent..."
-    sudo apt update
-    sudo apt install -y iptables-persistent
+    apt update
+    apt install -y iptables-persistent
 
-    sudo iptables-save | sudo tee /etc/iptables/rules.v4
+    iptables-save | tee /etc/iptables/rules.v4
 }
 
 # 3. Install X-UI (version 2.4.8)
@@ -51,6 +62,12 @@ install_xui() {
     VERSION="v2.4.8"
     bash <(curl -Ls "https://raw.githubusercontent.com/mhsanaei/3x-ui/$VERSION/install.sh") "$VERSION"
 }
+
+# 4. Backup and restore
+# (Manual Step - Instructions provided at the end)
+
+# 5. Change DNS in Cloudflare
+# (Manual Step - Instructions provided at the end)
 
 # 6. Download and configure Backhaul based on architecture
 setup_backhaul() {
@@ -101,7 +118,7 @@ EOF
 create_backhaul_service() {
     echo_info "Creating Backhaul systemd service..."
 
-    sudo tee /etc/systemd/system/backhaul.service > /dev/null <<EOF
+    tee /etc/systemd/system/backhaul.service > /dev/null <<EOF
 [Unit]
 Description=Backhaul Reverse Tunnel Service
 After=network.target
@@ -124,15 +141,30 @@ retrieve_tunnel_ip() {
 
     # Wait for Backhaul service to start and establish the tunnel
     # Adjust the sleep time as necessary based on your network conditions
-    sleep 10
+    sleep 15
 
     # Example method to retrieve tunnel IP from the log file
     # This assumes that Backhaul logs the tunnel IP upon connection
     # Adjust the grep/awk command based on actual log format
-    TUNNEL_IP=$(grep "Tunnel established" /root/backhaul.json | awk -F '"' '{print $4}')
 
-    # Check if TUNNEL_IP was found
-    if [[ -z "$TUNNEL_IP" ]]; then
+    # Check if backhaul.json exists
+    if [ ! -f /root/backhaul.json ]; then
+        echo_error "/root/backhaul.json does not exist. Cannot retrieve Tunnel IP."
+        exit 1
+    fi
+
+    # Extract the tunnel IP using jq (assuming JSON format)
+    if command -v jq >/dev/null 2>&1; then
+        TUNNEL_IP=$(jq -r '.tunnel_ip' /root/backhaul.json)
+    else
+        # Install jq if not present
+        echo_info "Installing jq for JSON parsing..."
+        apt install -y jq
+        TUNNEL_IP=$(jq -r '.tunnel_ip' /root/backhaul.json)
+    fi
+
+    # Validate the retrieved IP
+    if [[ -z "$TUNNEL_IP" || "$TUNNEL_IP" == "null" ]]; then
         echo_error "Failed to retrieve Tunnel IP. Please check the Backhaul logs."
         exit 1
     fi
@@ -145,25 +177,25 @@ update_config() {
     echo_info "Updating config.toml with Tunnel IP..."
 
     # Use sed to replace the placeholder_ip with the actual Tunnel IP
-    sudo sed -i "s/placeholder_ip:8080/${TUNNEL_IP}:8080/" /root/config.toml
+    sed -i "s/placeholder_ip:8080/${TUNNEL_IP}:8080/" /root/config.toml
 }
 
 # 8. Start Backhaul service
 start_backhaul_service() {
     echo_info "Starting Backhaul service..."
 
-    sudo systemctl daemon-reload
-    sudo systemctl enable backhaul.service
-    sudo systemctl start backhaul.service
-    sudo systemctl status backhaul.service --no-pager
+    systemctl daemon-reload
+    systemctl enable backhaul.service
+    systemctl start backhaul.service
+    systemctl status backhaul.service --no-pager
 }
 
 # 9. Restart Backhaul service to apply updated config
 restart_backhaul_service() {
     echo_info "Restarting Backhaul service to apply updated config..."
 
-    sudo systemctl restart backhaul.service
-    sudo systemctl status backhaul.service --no-pager
+    systemctl restart backhaul.service
+    systemctl status backhaul.service --no-pager
 }
 
 # Main Execution Flow
