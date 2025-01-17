@@ -24,18 +24,27 @@ cd /root
 
 # 1. Run Hashemi Linux Optimizer script twice with options 2 and 5
 run_linux_optimizer() {
-    echo_info "Downloading Linux Optimizer script..."
+    echo "Downloading Linux Optimizer script..."
     wget "https://raw.githubusercontent.com/hawshemi/Linux-Optimizer/main/linux-optimizer.sh" -O /root/linux-optimizer.sh
+
+    # Ensure the script is executable
     chmod +x /root/linux-optimizer.sh
 
-    echo_info "Running Linux Optimizer with options 2 and 5, and answering 'n' to reboot..."
-    bash /root/linux-optimizer.sh <<EOF
-2
-n
-5
-n
-\003
-EOF
+    echo "Running Linux Optimizer with options 2 and 5, and canceling after option 5..."
+    {
+        echo "2"  # Provide input for option 2
+        sleep 1  # Wait briefly for the script to process
+        echo "n"  # Respond 'n' to the reboot prompt
+        sleep 1
+        echo "5"  # Provide input for option 5
+        sleep 1  # Allow option 5 to run before cancellation
+    } | bash /root/linux-optimizer.sh &  # Run the script in the background
+
+    # Get the process ID of the script
+    PID=$!
+    sleep 3  # Wait for the script to start option 5
+    echo "Terminating the script..."
+    kill -9 $PID  # Force terminate the script
 }
 
 # 2. Block England IP ranges
