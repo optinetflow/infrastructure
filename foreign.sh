@@ -41,21 +41,7 @@ EOF
 block_england_ips() {
     echo_info "Blocking England IP ranges..."
 
-    # Example IP ranges for England; replace these with actual ranges as needed
-    ENGLAND_IP_RANGES=(
-        "5.0.0.0/8"
-        # Add more IP ranges here
-    )
-
-    for ip in "${ENGLAND_IP_RANGES[@]}"; do
-        iptables -A OUTPUT -d "$ip" -j DROP
-    done
-
-    echo_info "Updating iptables-persistent..."
-    apt update
-    apt install -y iptables-persistent
-
-    iptables-save | tee /etc/iptables/rules.v4
+    sudo iptables -A OUTPUT -d 25.0.0.0/8 -j DROP && sudo apt update && sudo apt install iptables-persistent && sudo iptables-save | sudo tee /etc/iptables/rules.v4
 }
 
 # 3. Install X-UI (version 2.4.8)
